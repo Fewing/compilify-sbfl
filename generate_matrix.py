@@ -159,7 +159,7 @@ def generate_coverage_matrix(language: str):
         input_file_list = []
         output_file_list = []
         # 测试点
-        for testcase in sorted(os.listdir(TESTCASES_DATA_PATH), key=int):
+        for testcase in os.listdir(TESTCASES_DATA_PATH):
             input_file_list.append(
                 os.path.join(TESTCASES_DATA_PATH, testcase, TESTCASE_TESTFILE_FILE)
             )

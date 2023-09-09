@@ -2,7 +2,7 @@ import os
 
 # testcase
 TESTCASE_TESTFILE_FILE = "testfile.txt"
-TESTCASE_EXPECT_OUTPUT_FILE = "output.txt"
+TESTCASE_EXPECT_OUTPUT_FILE = "out.txt"
 TESTCASE_IN_FILE = "in.txt"
 TESTCASE_CONFIG_FILE = "config.json"
 
