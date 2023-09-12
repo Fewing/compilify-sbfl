@@ -10,12 +10,12 @@ def start_fl(result_vector, coverage_matrix, file_line_map):
     if result_vector.count(True) == 0:  # 全部测试点WA
         message = "所有测试点均WA，无法定位错误位置"
         with open(os.path.join(TESTCASES_RESULT_PATH, RESULT_FILE), "w") as f:
-            json.dump({"message": message}, f, indent=4)
+            json.dump({"message": message}, f, indent=4, ensure_ascii=False)
         return
     elif result_vector.count(False) == 0:  # 全部测试点通过(其他的TLE了)
         message = "除了超时和运行时错误的测试点，其他测试点均AC，无法定位错误位置"
         with open(os.path.join(TESTCASES_RESULT_PATH, RESULT_FILE), "w") as f:
-            json.dump({"message": message}, f, indent=4)
+            json.dump({"message": message}, f, indent=4, ensure_ascii=False)
         return
     else:
         X = np.array(coverage_matrix, dtype=bool)
@@ -32,7 +32,7 @@ def start_fl(result_vector, coverage_matrix, file_line_map):
         if min(line_rank) > THRESHOLD_LINE_NUM:
             message = "错误位置定位失败，可能是因为错误在出现在主干代码，而不是分支代码中"
             with open(os.path.join(TESTCASES_RESULT_PATH, RESULT_FILE), "w") as f:
-                json.dump({"message": message}, f, indent=4)
+                json.dump({"message": message}, f, indent=4, ensure_ascii=False)
             return
         # 按照得分排序
         scores_dict = {}
@@ -73,4 +73,4 @@ def start_fl(result_vector, coverage_matrix, file_line_map):
                             )
                         break
         with open(os.path.join(TESTCASES_RESULT_PATH, RESULT_FILE), "w") as f:
-            json.dump(location_result, f, indent=4)
+            json.dump(location_result, f, indent=4, ensure_ascii=False)
