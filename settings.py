@@ -25,7 +25,7 @@ SRC_LANG = os.environ["SRC_LANG"]
 # SRC_LANG = "cpp"
 
 # TLE Limit
-TLE_LIMIT = 10
+TLE_LIMIT = 30
 
 # 错误定位输出最大行数
 MAX_OUTPUT_LINE = 30

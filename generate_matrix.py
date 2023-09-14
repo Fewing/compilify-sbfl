@@ -1,35 +1,11 @@
 import difflib
-import json
 import multiprocessing
 import shutil
-import subprocess
 import tempfile
 
 from settings import *
-from srclang.cpp import gcc_compile
-
-
-def process_gcovr_data(coverage_data: dict, src_dir: str):
-    """
-    Process the coverage data from gcovr.
-    """
-    line_coverage = []
-    file_line_map = {}
-    for file in coverage_data["files"]:
-        # 计算file的总代码行
-        with open(os.path.join(src_dir, file["file"]), "r", errors="ignore") as f:
-            total_line_count = len(f.readlines())
-        current_line_coverage = [0] * total_line_count
-        for line in file["lines"]:
-            if line["count"] > 0:
-                current_line_coverage[line["line_number"] - 1] = 1
-        line_coverage.extend(current_line_coverage)
-        if file["file"] not in file_line_map:
-            file_line_map[file["file"]] = {
-                "start": len(line_coverage) - total_line_count,
-                "end": len(line_coverage) - 1,
-            }
-    return line_coverage, file_line_map
+from srclang.cpp import compile_cpp, run_cpp
+from srclang.java import compile_java, run_java
 
 
 def run_testcase(
@@ -39,53 +15,31 @@ def run_testcase(
     output_file_name: str,
     working_dir: str,
 ):
-    # 设置gcov输出的环境变量
-    os.environ["GCOV_PREFIX"] = working_dir
-    os.environ["GCOV_PREFIX_STRIP"] = "3"
     # 拷贝测试用例输入
     shutil.copy(testcase_input_file, os.path.join(working_dir, "testfile.txt"))
-    if language == "C" or language == "cpp":
-        command = f"timeout {60} ./main.run"
-        try:
-            res = subprocess.run(
-                args=command,
-                capture_output=True,
-                shell=True,
-                cwd=working_dir,
-            )  # 运行程序
-            if res.returncode == 124:
-                return False, "Time Limit Exceeded", None, None
-            if res.returncode != 0:
-                print(res.stderr.decode("utf-8", errors="ignore"))
-            res = subprocess.run(
-                args='gcovr --gcov-executable "llvm-cov-10 gcov" --json',
-                capture_output=True,
-                shell=True,
-                cwd=working_dir,
-            )  # 运行gcovr
-            if res.returncode == 0:
-                coverage_data = json.loads(res.stdout)
-                line_coverage, _ = process_gcovr_data(coverage_data, working_dir)
-            else:
-                print(res.stderr.decode("utf-8", errors="ignore"))
-                return False, "Run gcovr failed", None, None
-        except Exception as e:
-            print(e)
-            return False, str(e), None, None
-        if not os.path.exists(os.path.join(working_dir, output_file_name)):
-            return True, "No output file", False, line_coverage
-        else:
-            with open(os.path.join(working_dir, output_file_name), errors="ignore") as f:
-                output = f.read()
-            with open(testcase_output_file) as f:
-                answer = f.read()
-            diff = difflib.Differ().compare(output.splitlines(), answer.splitlines())
-            for line in diff:
-                if line.startswith("-") or line.startswith("+"):
-                    return True, "Wrong Answer", False, line_coverage
-            return True, "Accepted", True, line_coverage
+    if language == "cpp":
+        success, line_coverage, file_line_map = run_cpp(working_dir)
+        if not success:
+            return False, "Run cpp failed", None, None
+    elif language == "java":
+        success, line_coverage, file_line_map = run_java(working_dir)
+        if not success:
+            return False, "Run java failed", None, None
     else:
         return False, "Language not supported", None, None
+    # 比较输出
+    if not os.path.exists(os.path.join(working_dir, output_file_name)):
+        return True, "No output file", False, line_coverage
+    else:
+        with open(os.path.join(working_dir, output_file_name), errors="ignore") as f:
+            output = f.read()
+        with open(testcase_output_file) as f:
+            answer = f.read()
+        diff = difflib.Differ().compare(output.splitlines(), answer.splitlines())
+        for line in diff:
+            if line.startswith("-") or line.startswith("+"):
+                return True, "Wrong Answer", False, line_coverage
+        return True, "Accepted", True, line_coverage
 
 
 def run_testcase_wrapper(args):
@@ -97,50 +51,26 @@ def run_testcase_wrapper(args):
 
 # 计算各文件对应的代码行数
 def generate_file_line_map(language: str, working_dir: str):
-    file_line_map = {}
-    # 设置gcov输出的环境变量
-    os.environ["GCOV_PREFIX"] = working_dir
-    os.environ["GCOV_PREFIX_STRIP"] = "3"
-    if language == "C" or language == "cpp":
-        command = f"timeout {TLE_LIMIT} ./main.run"
-        try:
-            res = subprocess.run(
-                args=command,
-                capture_output=True,
-                shell=True,
-                cwd=working_dir,
-            )  # 运行程序
-            if res.returncode == 124:
-                return False, file_line_map
-            res = subprocess.run(
-                args='gcovr --gcov-executable "llvm-cov-10 gcov" --json',
-                capture_output=True,
-                shell=True,
-                cwd=working_dir,
-            )  # 运行gcovr
-            if res.returncode == 0:
-                coverage_data = json.loads(res.stdout)
-                _, file_line_map = process_gcovr_data(coverage_data, working_dir)
-            else:
-                print(res.stderr.decode("utf-8", errors="ignore"))
-                return False, file_line_map
-        except Exception as e:
-            print(e)
-            return False, file_line_map
-        return True, file_line_map
+    if language == "cpp":
+        success, line_coverage, file_line_map = run_cpp(working_dir)
+        return success, file_line_map
+    elif language == "java":
+        success, line_coverage, file_line_map = run_java(working_dir)
+        return success, file_line_map
     else:
         return False, file_line_map
 
 
 def generate_coverage_matrix(language: str):
     with tempfile.TemporaryDirectory() as temp_dir:
-        # 测试用途
-        # temp_dir = os.path.join("/home", "temp_dir")
-        # os.mkdir(temp_dir)
         # 拷贝源代码并编译
         compile_dir = os.path.join(temp_dir, "compile_dir")
         shutil.copytree(SUBMIT_FOLDER_PATH, compile_dir)
-        success, message = gcc_compile(compile_dir, language)
+        if language == "cpp":
+            success, message = compile_cpp(compile_dir, language)
+        elif language == "java":
+            success, message = compile_java(compile_dir)
+            shutil.copytree("jacoco_lib", os.path.join(temp_dir, "jacoco_lib"))
         if not success:
             print("Compile failed")
             print(message)
