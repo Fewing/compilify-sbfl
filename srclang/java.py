@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 from settings import TLE_LIMIT
 
 
-def compile_java(src_dir: str) -> tuple[bool, str]:
+def compile_java(src_dir: str):
     origin_cwd = os.getcwd()
     os.chdir(src_dir)  # change working directory to src_dir
     command = "javac -encoding UTF-8 -g -sourcepath . Compiler.java"
