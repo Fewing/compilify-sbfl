@@ -58,21 +58,17 @@ def process_jacoco_xml_file(src_dir: str, coverage_file: str):
     root = tree.getroot()
     for package in root.findall("package"):
         package_name = package.attrib["name"]
-        sourcefile_coverage_dict = {}
         for sourcefile in package.findall("sourcefile"):
-            sourcefile_coverage_dict[sourcefile.attrib["name"]] = [
-                i.attrib for i in sourcefile.findall("line")
-            ]
-        for java_class in package.findall("class"):
+            sourcefile_coverage = [i.attrib for i in sourcefile.findall("line")]
             if package_name == "":
-                src_file = f"{java_class.attrib['sourcefilename']}"
+                src_file = f"{sourcefile.attrib['name']}"
             else:
-                src_file = f"{package_name}/{java_class.attrib['sourcefilename']}"
+                src_file = f"{package_name}/{sourcefile.attrib['name']}"
             # 计算file的总代码行
             with open(os.path.join(src_dir, src_file), "r", errors="ignore") as f:
                 total_line_count = len(f.readlines())
             current_line_coverage = [0] * total_line_count
-            for line in sourcefile_coverage_dict[java_class.attrib["sourcefilename"]]:
+            for line in sourcefile_coverage:
                 if int(line["ci"]) + int(line["cb"]) > 0:
                     current_line_coverage[int(line["nr"]) - 1] = 1
             line_coverage.extend(current_line_coverage)
@@ -82,3 +78,10 @@ def process_jacoco_xml_file(src_dir: str, coverage_file: str):
                     "end": len(line_coverage) - 1,
                 }
     return line_coverage, file_line_map
+
+
+if __name__ == "__main__":
+    process_jacoco_xml_file(
+        "temp/submit",
+        "temp/submit/jacoco-report.xml",
+    )
