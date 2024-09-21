@@ -7,7 +7,7 @@ TESTCASE_IN_FILE = "in.txt"
 TESTCASE_CONFIG_FILE = "config.json"
 
 # out file
-PARSE_OUT_FILE = "output.txt"
+PARSE_OUT_FILE = TESTCASE_EXPECT_OUTPUT_FILE
 
 # fault location result file
 RESULT_FILE = "location_result.json"
