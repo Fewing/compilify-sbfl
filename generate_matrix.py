@@ -1,4 +1,5 @@
 import difflib
+import json
 import multiprocessing
 import shutil
 import tempfile
@@ -86,8 +87,12 @@ def generate_coverage_matrix(language: str):
         # 初始化
         coverage_matrix = []
         result_vector = []
+        # 测试输入
         input_file_list = []
+        # 测试预期输出文件
         output_file_list = []
+        # 测试实际输出文件
+        compiler_output_file = []
         # 测试点
         for testcase in os.listdir(TESTCASES_DATA_PATH):
             input_file_list.append(
@@ -96,6 +101,10 @@ def generate_coverage_matrix(language: str):
             output_file_list.append(
                 os.path.join(TESTCASES_DATA_PATH, testcase, TESTCASE_EXPECT_OUTPUT_FILE)
             )
+            config_file= os.path.join(TESTCASES_DATA_PATH, testcase, TESTCASE_CONFIG_FILE)
+            with open(config_file) as f:
+                config_dict = json.load(f)
+            compiler_output_file.append(f"{config_dict.get("type", "ans")}.txt")
         # 运行测试点
         # 输入参数
         working_dirs = []
@@ -107,7 +116,7 @@ def generate_coverage_matrix(language: str):
             [language] * len(input_file_list),
             input_file_list,
             output_file_list,
-            [PARSE_OUT_FILE] * len(input_file_list),
+            compiler_output_file,
             working_dirs,
         )
         # 多进程运行
