@@ -104,7 +104,7 @@ def generate_coverage_matrix(language: str):
             config_file= os.path.join(TESTCASES_DATA_PATH, testcase, TESTCASE_CONFIG_FILE)
             with open(config_file) as f:
                 config_dict = json.load(f)
-            compiler_output_file.append(f"{config_dict.get("type", "ans")}.txt")
+            compiler_output_file.append(f'{config_dict.get("type", "ans")}.txt')
         # 运行测试点
         # 输入参数
         working_dirs = []
