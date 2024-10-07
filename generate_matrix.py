@@ -18,7 +18,7 @@ def run_testcase(
 ):
     # 拷贝测试用例输入
     shutil.copy(testcase_input_file, os.path.join(working_dir, "testfile.txt"))
-    if language == "cpp":
+    if language == "cpp" or language == "c":
         success, line_coverage, file_line_map = run_cpp(working_dir)
         if not success:
             return False, "Run cpp failed", None, None
@@ -52,7 +52,7 @@ def run_testcase_wrapper(args):
 
 # 计算各文件对应的代码行数
 def generate_file_line_map(language: str, working_dir: str):
-    if language == "cpp":
+    if language == "cpp" or language == "c":
         success, line_coverage, file_line_map = run_cpp(working_dir)
         return success, file_line_map
     elif language == "java":
@@ -67,11 +67,14 @@ def generate_coverage_matrix(language: str):
         # 拷贝源代码并编译
         compile_dir = os.path.join(temp_dir, "compile_dir")
         shutil.copytree(SUBMIT_FOLDER_PATH, compile_dir)
-        if language == "cpp":
+        if language == "cpp" or language == "c":
             success, message = compile_cpp(compile_dir, language)
         elif language == "java":
             success, message = compile_java(compile_dir)
             shutil.copytree("jacoco_lib", os.path.join(temp_dir, "jacoco_lib"))
+        else:
+            print("Language not supported")
+            return [], [], {}
         if not success:
             print("Compile failed")
             print(message)
